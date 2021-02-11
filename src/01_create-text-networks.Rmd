@@ -1,0 +1,341 @@
+---
+title: "Text-Network Analysis of White & Black Soldiers"
+weight: 1
+output:
+  html_document:
+    toc: true
+    toc_depth: 2
+    number_sections: true
+---
+
+```{css, echo=FALSE}
+/* this chunnk of code centers all of the headings */
+h1, h2, h3, h4 {
+  text-align: center;
+}
+```
+
+#### Overview  
+
+In this document, we outline our workflow for "Using Text Networks to Examine American Soldier’s Perspectives on Racial Segregation during World War II." Below, we document how we: 
+
+- Ingest and clean the American Soldier data 
+- Create the black soldier response text network 
+- Create the white soldier response text network 
+- Create the black + white soldier response text network 
+
+#### Data Ingestition 
+
+```{r setup, include=FALSE, message=FALSE, warning=FALSE}
+rm(list = ls()) 
+
+# set format for rmd 
+knitr::opts_chunk$set(echo = F, fig.width = 8, fig.height = 6)
+knitr::opts_chunk$set(warning = FALSE, message = FALSE) ;
+
+# load libraries
+library(tidyverse)
+library(ggplot2)
+library(tidytext)
+library(SnowballC)
+library(widyr)
+library(data.table)
+library(stringi)
+library(igraph)
+library(ggraph)
+library(tidygraph)
+library(rgexf)
+
+# load data 
+data(stop_words)
+collapse <- fread("/sfs/qumulo/qhome/kb7hp/git/american-soldier-crdh/data/dictionaries/collapse_words.csv", sep = ",")
+#so that stringr doesn't pick up on instances where it is part of another word
+collapse <- mutate(collapse, original = paste("\\b", original,"\\b", sep = "")) 
+#replace with collapsed words
+source(here::here("functions", "load_data.R"))
+data$long <- stri_replace_all_regex(data$long, collapse$original, 
+                                    collapse$collapse_union, vectorize_all = FALSE)
+data$outfits_comment <- stri_replace_all_regex(data$outfits_comment, collapse$original, 
+                                               collapse$collapse_union, vectorize_all = FALSE)
+
+# split data by racial group 
+S32N <- filter(data, racial_group == "black")
+S32W <- filter(data, racial_group == "white")
+
+#Written response to "should soldiers be in separate outfits?"
+text77_df <- tibble(row = 1:nrow(S32W), text = S32W$outfits_comment, outfits = S32W$outfits) 
+#Written response on overall thoughts on the survey
+text78_df <- tibble(row = 1:nrow(S32W), text = S32W$long) 
+textn_df <- tibble(row = 1:nrow(S32N), text = S32N$long)
+textn_df
+```
+
+#### Black soldier response network 
+
+```{r, echo = FALSE, message=FALSE, warning=FALSE}
+
+# this takes the long response for BLACK soldiers and tokenizes the df 
+row_n_words <- textn_df %>%
+  mutate(section = row_number()) %>%
+  filter(section > 0) %>%
+  mutate(text = ifelse(str_detect(text, "u.s."), "usa", text)) %>%
+  mutate(text = ifelse(str_detect(text, "don‚äôt"), "don't", text)) %>%
+  unnest_tokens(word, text) %>%
+  filter(!word %in% stop_words$word) %>%
+  mutate(word= textstem::lemmatize_words(word)) %>%
+  mutate(word= wordStem(word))
+
+# cleans all of the stemming to make the visuals more interpretable 
+source(here::here("functions", "unstem_words.R"))
+row_n_words <- unstem_words(row_n_words)
+
+# count words co-occuring within sections
+word_pairs_n <- row_n_words %>%
+  pairwise_count(word, section, sort = TRUE)
+
+# filters the words not freq used 
+word_cors_n <- row_n_words %>%
+  group_by(word) %>%
+  filter(n() >= 20) %>%
+  pairwise_cor(word, section, sort = TRUE) %>%
+  filter(correlation > .1)
+
+# de-duplicates the edgelist
+remove_dups <- igraph::simplify(graph.data.frame(word_cors_n, directed = FALSE), 
+                              edge.attr.comb = igraph_opt("edge.attr.comb"),
+                              remove.loops = FALSE)
+remove_dups <- data.frame(as_edgelist(remove_dups, names = TRUE))
+
+corr_edgelist <- remove_dups %>% 
+  rename(item1 = X1, item2 = X2) %>% 
+  left_join(word_cors_n, by = c("item1", "item2")) %>% 
+  arrange(-correlation)
+
+# removes the numbers 
+number_list <- c("1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15")
+corr_edgelist_n <- corr_edgelist %>% 
+  rename(source = item1, target = item2, weight = correlation) %>%  
+  filter(!(source %in% number_list) & !(target %in% number_list)) 
+
+# pull out the nodelist 
+text_network <- graph.data.frame(corr_edgelist_n, directed = FALSE)
+black_nodelist <- data.frame(id = c(1:(igraph::vcount(text_network))), name = igraph::V(text_network)$name)
+black_nodelist <- black_nodelist %>% select(-id) %>% rename(id = name) %>% mutate(label = id)
+
+# community detection (using louvain method)
+components <- components(text_network)
+louvain <- cluster_louvain(text_network)
+fstgrdy <- fastgreedy.community(text_network)
+black_nodelist$component <- components$membership
+black_nodelist$louvain_comm <- louvain$membership
+black_nodelist$fstgrdy_comm <- fstgrdy$membership
+
+# centrality metrics 
+black_nodelist$deg_cent <- degree(text_network)
+black_nodelist$wtd_deg_cent <- strength(text_network)
+black_nodelist$eigen_cent <- eigen_centrality(text_network)$vector
+black_nodelist$page_rank <- page_rank(text_network)$vector
+black_nodelist$auth_score <- authority.score(text_network)$vector
+black_nodelist$hub_score <- hub.score(text_network)$vector
+black_nodelist$k_core <- coreness(text_network)
+
+# quick look at the network 
+set.seed(2016)
+corr_edgelist_n %>%
+  filter(weight > .1) %>%
+  graph_from_data_frame() %>%
+  ggraph(layout = "fr") +
+  geom_edge_link(aes(edge_alpha = weight), show.legend = TRUE) +
+  geom_node_point(color = "#E57200", size = 2) +
+  #geom_node_text(aes(label = name), repel = TRUE) +
+  ggtitle("Co-Occurences of Words from Black Soldiers' Long \nResponses at the 10% Threshold") +
+  theme_void()
+
+write_csv(black_nodelist, "/sfs/qumulo/qhome/kb7hp/git/american-soldier-crdh/data/outputs/cooc32l_black_nodes.csv")
+write_csv(corr_edgelist_n, "/sfs/qumulo/qhome/kb7hp/git/american-soldier-crdh/data/outputs/cooc32l_black_edges.csv")
+
+```
+
+#### White soldier response network 
+
+```{r unions, echo = FALSE, message=FALSE, warning=FALSE}
+
+# this takes the long response for WHITE soldiers and tokenizes the df 
+row_n_words <- text78_df %>%
+  mutate(section = row_number()) %>%
+  filter(section > 0) %>%
+  mutate(text = ifelse(str_detect(text, "u.s."), "usa", text)) %>%
+  mutate(text = ifelse(str_detect(text, "don‚äôt"), "don't", text)) %>%
+  unnest_tokens(word, text) %>%
+  filter(!word %in% stop_words$word) %>%
+  mutate(word= textstem::lemmatize_words(word)) %>%
+  mutate(word= wordStem(word))
+
+# cleans all of the stemming to make the visuals more interpretable 
+# cleans all of the stemming to make the visuals more interpretable 
+source(here::here("functions", "unstem_words.R"))
+row_n_words <- unstem_words(row_n_words)
+
+# count words co-occuring within sections
+word_pairs_n <- row_n_words %>%
+  pairwise_count(word, section, sort = TRUE)
+
+# filters the words not freq used 
+word_cors_n <- row_n_words %>%
+  group_by(word) %>%
+  filter(n() >= 20) %>%
+  pairwise_cor(word, section, sort = TRUE) %>%
+  filter(correlation > .1)
+
+# de-duplicates the edgelist
+remove_dups <- igraph::simplify(graph.data.frame(word_cors_n, directed = FALSE), 
+                              edge.attr.comb = igraph_opt("edge.attr.comb"),
+                              remove.loops = FALSE)
+remove_dups <- data.frame(as_edgelist(remove_dups, names = TRUE))
+
+corr_edgelist <- remove_dups %>% 
+  rename(item1 = X1, item2 = X2) %>% 
+  left_join(word_cors_n, by = c("item1", "item2")) %>% 
+  arrange(-correlation)
+
+# removes the numbers 
+number_list <- c("1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15")
+corr_edgelist_w <- corr_edgelist %>% 
+  rename(source = item1, target = item2, weight = correlation) %>%  
+  filter(!(source %in% number_list) & !(target %in% number_list)) 
+
+# pull out the nodelist 
+text_network <- graph.data.frame(corr_edgelist_w, directed = FALSE)
+white_nodelist <- data.frame(id = c(1:(igraph::vcount(text_network))), name = igraph::V(text_network)$name)
+white_nodelist <- white_nodelist %>% select(-id) %>% rename(id = name) %>% mutate(label = id)
+
+# community detection (using louvain method)
+components <- components(text_network)
+louvain <- cluster_louvain(text_network)
+fstgrdy <- fastgreedy.community(text_network)
+white_nodelist$component <- components$membership
+white_nodelist$louvain_comm <- louvain$membership
+white_nodelist$fstgrdy_comm <- fstgrdy$membership
+
+# centrality metrics 
+white_nodelist$deg_cent <- degree(text_network)
+white_nodelist$wtd_deg_cent <- strength(text_network)
+white_nodelist$eigen_cent <- eigen_centrality(text_network)$vector
+white_nodelist$page_rank <- page_rank(text_network)$vector
+white_nodelist$auth_score <- authority.score(text_network)$vector
+white_nodelist$hub_score <- hub.score(text_network)$vector
+white_nodelist$k_core <- coreness(text_network)
+
+# quick look at the network 
+set.seed(2016)
+corr_edgelist_w %>%
+  filter(weight > .1) %>%
+  graph_from_data_frame() %>%
+  ggraph(layout = "fr") +
+  geom_edge_link(aes(edge_alpha = weight), show.legend = TRUE) +
+  geom_node_point(color = "#E57200", size = 2) +
+  #geom_node_text(aes(label = name), repel = TRUE) +
+  ggtitle("Co-Occurences of Words from White Soldiers' Long \nResponses at the 10% Threshold") +
+  theme_void()
+
+write_csv(white_nodelist, "/sfs/qumulo/qhome/kb7hp/git/american-soldier-crdh/data/outputs/cooc32l_white_nodes.csv")
+write_csv(corr_edgelist_w, "/sfs/qumulo/qhome/kb7hp/git/american-soldier-crdh/data/outputs/cooc32l_white_edges.csv")
+
+```
+
+#### Black + white soldier response network 
+
+```{r}
+
+# add variable names to the edgelists 
+comb_edgelist_n <- corr_edgelist_n %>% 
+  mutate(group = "black")
+comb_edgelist_w <- corr_edgelist_w %>% 
+  mutate(group = "white")
+
+# rbind the edgelists together  
+comb_edgelist_wn <- comb_edgelist_n %>% 
+  bind_rows(comb_edgelist_w) %>% 
+  arrange(-weight)
+
+# quick look at the network 
+set.seed(2016)
+comb_edgelist_wn %>%
+  filter(weight > .1) %>%
+  graph_from_data_frame() %>%
+  ggraph(layout = "fr") +
+  geom_edge_link(aes(edge_alpha = weight, colour = group), show.legend = TRUE) +
+  geom_node_point(color = "#000080", size = 2) +
+  scale_edge_colour_manual(values=c("black" = "#E57200", "white" = "#628ed8"))+
+  ggtitle("Co-Occurences of Words from White and Black Soldiers' Long \nResponses at the 10% Threshold") +
+  theme_void()
+```
+
+#### Creating the Gephi Visualizations 
+
+- To do this, we need to create reproducible metrics in `igraph` that we output to nodelists in `.csv` and edgelists in `.gexf`. 
+
+```{r}
+# pull out the nodelist 
+text_network <- graph.data.frame(comb_edgelist_wn, directed = FALSE)
+combined_nodelist <- data.frame(id = c(1:(igraph::vcount(text_network))), 
+                                name = igraph::V(text_network)$name)
+combined_nodelist <- combined_nodelist 
+
+# community detection (using louvain method)
+components <- components(text_network)
+louvain <- cluster_louvain(text_network)
+#fstgrdy <- fastgreedy.community(text_network)
+combined_nodelist$component <- components$membership
+combined_nodelist$louvain_comm <- louvain$membership
+#combined_nodelist$fstgrdy_comm <- fstgrdy$membership
+
+# centrality metrics 
+combined_nodelist$deg_cent <- degree(text_network)
+combined_nodelist$wtd_deg_cent <- strength(text_network)
+combined_nodelist$eigen_cent <- eigen_centrality(text_network)$vector
+combined_nodelist$page_rank <- page_rank(text_network)$vector
+combined_nodelist$auth_score <- authority.score(text_network)$vector
+combined_nodelist$hub_score <- hub.score(text_network)$vector
+combined_nodelist$k_core <- coreness(text_network)
+
+# to read the graph into gephi with weighted edges AND edge attributes 
+# we have to convert the file into a gexf object like this: 
+edgelist_simplified <- as.data.frame(as_edgelist(text_network, names = FALSE)) %>% 
+  rename(Source = V1, Target = V2)
+edgelist_attributes <- comb_edgelist_wn %>% select(weight, group) %>% 
+  rename(Weight = weight, Group = group)
+gexf_file <- write.gexf(nodes=combined_nodelist %>% select(id, name), 
+                        edges=edgelist_simplified, edgesAtt=edgelist_attributes, 
+                        output = "~/git/american-soldier-crdh/data/outputs/cooc32l_wb_network.gexf")
+
+final_nodelist <- combined_nodelist %>% select(-id) %>% rename(id = name) %>% mutate(label = id)
+
+# and then save the edgelist and nodelist 
+write_csv(final_nodelist, "/sfs/qumulo/qhome/kb7hp/git/american-soldier-crdh/data/outputs/cooc32l_wb_nodes.csv")
+write_csv(comb_edgelist_wn, "/sfs/qumulo/qhome/kb7hp/git/american-soldier-crdh/data/outputs/cooc32l_wb_edges.csv")
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

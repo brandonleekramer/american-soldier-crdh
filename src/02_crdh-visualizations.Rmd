@@ -1,0 +1,56 @@
+---
+title: "American Soldier - Current Research in Digital History Visualizations"
+output: html_document
+---
+
+```{css, echo=FALSE}
+/* this chunnk of code centers all of the headings */
+h1, h2, h3, h4 {
+  text-align: center;
+}
+```
+
+#### CRDH Network Visualizations 
+
+We created the visualizations in Gephi, taking rough notes in this [Google sheet](https://docs.google.com/spreadsheets/d/1LxBJ58I9SMrsbnE03cMdyXT7a6zRg8o3hNqjQ58lIs0/edit#gid=0). However, these notes are cleaned up and documented more thoroughly below. 
+
+#### Black response network  
+
+To create this network, we used the ``01_create-text-networks.Rmd`, leaving with us an edgelist of source-target-weight and a nodelist with all the centrality measures and communities. Because the multilayer response network requires a Louvain algorithm to calculate across both types of ties, we too will use the Louvain algorithm in the single-layer response networks as well. 
+
+![](~/git/american-soldier-crdh/static/black_comms.jpg)
+
+Once the edgelist and nodelist are ingested into Gephi, we sized the nodes with with the `deg_cent` variable using a MIN of 10 and MAX of 100 in the upper left window of Gephi's node sizing function. Next, we set the node colors to the `louvain_comm` communities and set the node labels to be proportional to the node size. Before doing any manually recoloring, we then ran a Fruchterman-Rheingold layout to get the nodes in a circular format. Afterwards, we also ran the Force Atlas 2 algorithm with the `Scaling` set at 1, with `Dissuade hubs`, `LinLog` and `Prevent Overlap` all checked off. In the black response network, this situated the racialized terms toward the center of the graph since they were the largest based on degree centrality. However, the communities were all mixed and this has little utility for interpreting the clustering of terms. Thus, we decided to manually place the nodes into communities, meaning that this process was *not* automated and thus cannot be reproduced without manually situating the nodes. Once the nodes were manually located next to other words in their communities, we developed a color palette that was based on the eight communities in the network (see below). To help with the legibility of the nodes and text, we also continued to run a Noverlap layout with the parameters set at 3, 1.2, and 14.0. To output the graph, we used the Preview tab, adjusting the Nodes (Border Width at 1.0, Opacity at 90.0), Node Labels (Show Labels checked, Font at Avenir 6 Plain), and Edges (Show Edges checked, Thickness at 3.0, Edge weights rescaled to 0.2-1.0, Edge colors mixed, Edges Curved). Once this process was completed, we exported the image as an `.svg` converted it to a `.jpeg` file and then imported this into our `.docx` file for publication. 
+
+#### White response network 
+
+![](~/git/american-soldier-crdh/static/white_comms.jpg)
+
+Next, we created the text network for the white responses. Like before, we sized the nodes with with the `deg_cent` variable using a MIN of 10 and MAX of 100 in the upper left window of Gephi's node sizing function and set the node colors to the `louvain_comm` communities and set the node labels to be proportional to the node size. Before doing any manually recoloring, we then ran a Fruchterman-Rheingold layout to get the nodes in a circular format and ran the Force Atlas 2 algorithm with the `Scaling` set at 1, with `Dissuade hubs`, `LinLog` and `Prevent Overlap` all checked off to get a more dispersed graph. This white network also required manual placement of most nodes, but did tend to place larger nodes toward the center of the graph again. Again, to help with the legibility of the nodes and text, we also continued to run a Noverlap layout with the parameters set at 3, 1.2, and 14.0 while we repositioned the nodes. Just to reiterate, the same caveats about this graph being *not* being automated apply. To output the graph, we used the Preview tab, adjusting the Nodes (Border Width at 1.0, Opacity at 90.0), Node Labels (Show Labels checked, Font at Avenir 8 Plain), and Edges (Show Edges checked, Thickness at 4.0, Edge weights rescaled to 0.2-1.0, Edge colors mixed, Edges Curved). Once this process was completed, we exported the image as an `.svg` converted it to a `.jpeg` file and then imported this into our `.docx` file for publication. 
+
+#### Black + white multilayer response network (with communities uncolored)
+
+To create the multilayered response network, we ingested the edgelist as a `.csv` (or as a `.gexf` file) with the edges unmerged during the second stage of the import. Like before, we sized all of the nodes using the `deg_cent` variableand set the node labels to be proportional to the node size. This time we converted all the node colors to white using #FFFFFF and the change the black edges to be colored as #38B1FF and the white edges to be colored as #FF723D. Next, we ran a Fruchterman-Rheingold layout to get the nodes in a circular format and ran the Force Atlas 2 algorithm with the `Scaling` set at 1, with `Dissuade hubs`, `LinLog` and `Prevent Overlap` all checked off to get a more dispersed graph. This time we did almost no manual adjustments since the distribution did not depend on community clustering for interpretation. This makes the next step a little less interpretable, but we agreed that this was the best approach. That said, we still ran the Noverlap layout with the parameters set at 3, 1.2, and 14.0 to spread the node labels. Moreover, we removed most of the node labels below a degree of 15 other than a select few that added to the interpretation of the graph. All labels above deg_cent = 19 remained in the graph. To output the graph, we used the Preview tab, adjusting the Nodes (Border Width at 5.0, Opacity at 100.0), Node Labels (Show Labels checked, Font at Avenir 8 Plain), and Edges (Show Edges checked, Thickness at 5.0, Edge weights rescaled to 0.2-1.0, Edge colors mixed, Edges Curved). Once this process was completed, we exported the image as an `.svg` converted it to a `.jpeg` file and then imported this into our `.docx` file for publication. 
+
+#### Black + white multilayer response network (with communities colored)
+
+Using the exact same layout as what we just detailed, we applied the Black+White community color palette (below) and then added a filter in Library > Attributes > Partition > louvain_comm. With this filter applied, we checked on communities 1, 7 and 8 for the first visualization and then applied only 2, 3, 4, and 5 for the second visualization. All of the Preview settings are the same as the last section. Once this process was completed, we exported the image as an `.svg` converted it to a `.jpeg` file and then imported this into our `.docx` file for publication. 
+
+
+| CRDH Network Visualization Color Palettes                                   |
+| --------------------------------------------------------------------------- |
+| Black palette    | White palette    | Black+White edges | Black+White comms | 
+| ---------------- | ---------------- | ----------------- | ----------------- |
+| Comm 2 - #42B3E5 | Comm 4 - #FFC300 | Black - #38B1FF   | Comm 2 - #42B3E5  |     
+| Comm 1 - #DF4925 | Comm 7 - #5BC21C | White - #FF723D   | Comm 3 - #D9E12B  |
+| Comm 4 - #FFC300 | Comm 3 - #D9E12B |                   | Comm 1 - #FFC300  |
+| Comm 6 - #5BC21C | Comm 5 - #42B3E5 |                   | Comm 6 - #5BC21C  | 
+| Comm 9 - #0AA18C | Comm 6 - #0AA18C |                   | Comm 5 - #FF5733  |
+| Comm 7 - #CEA219 | Comm 1 - #DF4925 |                   | Comm 8 - #0AA18C  |
+| Comm 3 - #D9E12B | Comm 2 - #E6632B |                   | Comm 4 - #DF4925  | 
+| Comm 8 - #FF5733 | Comm 8 - #FFC300 |                   | Comm 7 - #0AA18C  |
+| Comm 5 - #FF5733 |                  |                   |                   |
+
+
+
+
