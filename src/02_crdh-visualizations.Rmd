@@ -20,7 +20,7 @@ To create this network, we used the `01_create-text-networks.Rmd`, leaving with 
 
 ![](~/git/american-soldier-crdh/static/black_comms.jpg)
 
-Once the edgelist and nodelist are ingested into Gephi, we sized the nodes with with the `deg_cent` variable using a MIN of 10 and MAX of 100 in the upper left window of Gephi's node sizing function. Next, we set the node colors to the `louvain_comm` communities and set the node labels to be proportional to the node size. Before doing any manually recoloring, we then ran a Fruchterman-Rheingold layout to get the nodes in a circular format. Afterwards, we also ran the Force Atlas 2 algorithm with the `Scaling` set at 1, with `Dissuade hubs`, `LinLog` and `Prevent Overlap` all checked off. In the black response network, this situated the racialized terms toward the center of the graph since they were the largest based on degree centrality. However, the communities were all mixed and this has little utility for interpreting the clustering of terms. Thus, we decided to manually place the nodes into communities, meaning that this process was *not* automated and thus cannot be reproduced without manually situating the nodes. Once the nodes were manually located next to other words in their communities, we developed a color palette that was based on the eight communities in the network (see below). To help with the legibility of the nodes and text, we also continued to run a Noverlap layout with the parameters set at 3, 1.2, and 14.0. To output the graph, we used the Preview tab, adjusting the Nodes (Border Width at 1.0, Opacity at 90.0), Node Labels (Show Labels checked, Font at Avenir 6 Plain), and Edges (Show Edges checked, Thickness at 3.0, Edge weights rescaled to 0.2-1.0, Edge colors mixed, Edges Curved). Once this process was completed, we exported the image as an `.svg` converted it to a `.jpeg` file and then imported this into our `.docx` file for publication. 
+Once the edgelist and nodelist are ingested into Gephi, we sized the nodes with with the `deg_cent` variable using a MIN of 10 and MAX of 100 in the upper left window of Gephi's node sizing function. Next, we set the node colors to the `louvain_comm` communities and set the node labels to be proportional to the node size. Before doing any manually recoloring, we then ran a Fruchterman-Rheingold layout to get the nodes in a circular format. Afterwards, we also ran the Force Atlas 2 algorithm with the `Scaling` set at 1, with `Dissuade hubs`, `LinLog` and `Prevent Overlap` all checked off. In the black response network, this situated the racialized terms toward the center of the graph since they were the largest based on degree centrality. However, the communities were all mixed and this has little utility for interpreting the clustering of terms. Thus, we decided to manually place the nodes into communities, meaning that this process was *not* automated and thus cannot be reproduced without manually situating the nodes. Once the nodes were manually located next to other words in their communities, we developed a color palette that was based on the eight communities in the network (see below). To help with the legibility of the nodes and text, we also continued to run a Noverlap layout with the parameters set at 3, 1.2, and 14.0. To output the graph, we used the Preview tab, adjusting the Nodes (Border Width at 1.0, Opacity at 90.0), Node Labels (Show Labels checked, Font at Avenir 6 Plain), and Edges (Show Edges checked, Thickness at 4.0, Edge weights rescaled to 0.2-1.0, Edge colors mixed, Edges Curved). Once this process was completed, we exported the image as an `.svg` converted it to a `.jpeg` file and then imported this into our `.docx` file for publication. 
 
 #### White response network 
 
@@ -43,14 +43,16 @@ Using the exact same layout as what we just detailed, we applied the Black+White
 | ---------------- | ---------------- | ----------------- | ----------------- |
 | Comm 2 - #42B3E5 | Comm 4 - #FFC300 | Black - #38B1FF   | Comm 2 - #42B3E5  |     
 | Comm 1 - #DF4925 | Comm 7 - #5BC21C | White - #FF723D   | Comm 3 - #D9E12B  |
-| Comm 4 - #FFC300 | Comm 3 - #D9E12B |                   | Comm 1 - #FFC300  |
-| Comm 6 - #5BC21C | Comm 5 - #42B3E5 |                   | Comm 6 - #5BC21C  | 
-| Comm 9 - #0AA18C | Comm 6 - #0AA18C |                   | Comm 5 - #FF5733  |
-| Comm 7 - #CEA219 | Comm 1 - #DF4925 |                   | Comm 8 - #0AA18C  |
-| Comm 3 - #D9E12B | Comm 2 - #E6632B |                   | Comm 4 - #DF4925  | 
-| Comm 8 - #FF5733 | Comm 8 - #FFC300 |                   | Comm 7 - #0AA18C  |
-| Comm 5 - #FF5733 |                  |                   |                   |
+| Comm 4 - #FFC300 | Comm 3 - #D9E12B | ^ original        | Comm 1 - #FFC300  |
+| Comm 6 - #5BC21C | Comm 5 - #42B3E5 | Black - #03A8FF   | Comm 6 - #5BC21C  | 
+| Comm 9 - #0AA18C | Comm 6 - #0AA18C | White - #FF4C00   | Comm 5 - #FF5733  |
+| Comm 7 - #CEA219 | Comm 1 - #DF4925 | ^ blk version     | Comm 8 - #DF4925  |
+| Comm 3 - #D9E12B | Comm 2 - #E6632B |                   | Comm 4 - #0AA18C  | 
+| Comm 8 - #FF5733 | Comm 8 - #FFC300 |                   | Comm 7 - #143366  |
+| Comm 5 - #FF5733 |                  | ^ gizmo version   |                   |
 
+42A5FF
+3D9DFF
 
 
 
