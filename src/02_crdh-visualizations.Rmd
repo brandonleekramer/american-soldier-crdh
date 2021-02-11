@@ -16,7 +16,7 @@ We created the visualizations in Gephi, taking rough notes in this [Google sheet
 
 #### Black response network  
 
-To create this network, we used the ``01_create-text-networks.Rmd`, leaving with us an edgelist of source-target-weight and a nodelist with all the centrality measures and communities. Because the multilayer response network requires a Louvain algorithm to calculate across both types of ties, we too will use the Louvain algorithm in the single-layer response networks as well. 
+To create this network, we used the `01_create-text-networks.Rmd`, leaving with us an edgelist of source-target-weight and a nodelist with all the centrality measures and communities. Because the multilayer response network requires a Louvain algorithm to calculate across both types of ties, we too will use the Louvain algorithm in the single-layer response networks as well. 
 
 ![](~/git/american-soldier-crdh/static/black_comms.jpg)
 
